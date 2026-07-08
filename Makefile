@@ -3,8 +3,9 @@ SRC     = src
 FUNCS   ?= data/input/functions_definition.json
 INPUT   ?= data/input/function_calling_tests.json
 OUTPUT  ?= data/output/function_calling_results.json
+MODEL   ?= Qwen/Qwen3-0.6B
 
-.PHONY: help install run test debug lint lint-strict clean
+.PHONY: help install run test pytest debug lint lint-strict clean
 
 help:
 	@echo "Usage:"
@@ -13,7 +14,9 @@ help:
 	@echo "  make run FUNCS=<path>         Override functions definition file"
 	@echo "  make run INPUT=<path>         Override input prompts file"
 	@echo "  make run OUTPUT=<path>        Override output file"
+	@echo "  make run MODEL=<id>           Override HuggingFace model identifier"
 	@echo "  make test                     Run and print a summary of results"
+	@echo "  make pytest                   Run the unit test suite"
 	@echo "  make debug                    Run under pdb debugger"
 	@echo "  make lint                     Check style and types (flake8 + mypy)"
 	@echo "  make lint-strict              Stricter mypy (--strict)"
@@ -26,13 +29,15 @@ run:
 	$(PYTHON) -m $(SRC) \
 		--functions_definition $(FUNCS) \
 		--input $(INPUT) \
-		--output $(OUTPUT)
+		--output $(OUTPUT) \
+		--model $(MODEL)
 
 test:
 	@$(PYTHON) -m $(SRC) \
 		--functions_definition $(FUNCS) \
 		--input $(INPUT) \
-		--output $(OUTPUT)
+		--output $(OUTPUT) \
+		--model $(MODEL)
 	@echo ""
 	@$(PYTHON) -c "\
 import json; \
@@ -41,15 +46,19 @@ print(f'  {len(d)} result(s) — all valid JSON\n'); \
 [print(f\"  {r['name']:<35s} <- {r['prompt']}\") for r in d]; \
 "
 
+pytest:
+	$(PYTHON) -m pytest tests/ -v
+
 debug:
 	$(PYTHON) -m pdb -m $(SRC) \
 		--functions_definition $(FUNCS) \
 		--input $(INPUT) \
-		--output $(OUTPUT)
+		--output $(OUTPUT) \
+		--model $(MODEL)
 
 lint:
 	flake8 .
-	mypy . --warn-return-any --warn-unused-ignores \
+	mypy . --warn-return-any \
 	       --ignore-missing-imports --disallow-untyped-defs \
 	       --check-untyped-defs
 

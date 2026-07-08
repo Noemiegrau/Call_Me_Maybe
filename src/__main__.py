@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
     Returns:
-        Parsed arguments with functions_definition, input, and output paths.
+        Parsed arguments with functions_definition, input, output, and model.
     """
     parser = argparse.ArgumentParser(
         description="Translate natural language prompts into function calls."
@@ -35,6 +35,12 @@ def parse_args() -> argparse.Namespace:
         metavar="FILE",
         help="Path for the output results JSON file.",
     )
+    parser.add_argument(
+        "--model",
+        default="Qwen/Qwen3-0.6B",
+        metavar="MODEL",
+        help="HuggingFace model identifier (default: Qwen/Qwen3-0.6B).",
+    )
     return parser.parse_args()
 
 
@@ -49,7 +55,7 @@ def main() -> int:
     functions = load_functions(args.functions_definition)
     prompts = load_prompts(args.input)
 
-    model = Small_LLM_Model()
+    model = Small_LLM_Model(model_name=args.model)
     vocab = load_vocab(model.get_path_to_vocab_file())
     reverse_vocab = build_reverse_vocab(vocab)
     trie = build_trie([fn.name for fn in functions])

@@ -201,10 +201,11 @@ def generate_string(
     input_ids: list[int],
     reverse_vocab: dict[int, str],
 ) -> tuple[str, list[int]]:
-    """Generate a JSON string value, stopping on the closing quote token.
+    """Generate a JSON string value, stopping on the unescaped closing quote.
 
-    Tokens containing a quote character are blocked unless they are
-    exactly the single closing quote, which ends generation.
+    Tokens containing a quote are blocked unless they are exactly the
+    closing quote or the two-character escape sequence backslash-quote.
+    Generation stops on a bare quote that is not preceded by a backslash.
 
     Args:
         model: The language model used to get logits.
@@ -222,11 +223,11 @@ def generate_string(
             if not token_str:
                 logits[i] = float("-inf")
                 continue
-            if '"' in token_str and token_str != '"':
+            if '"' in token_str and token_str not in {'"', '\\"'}:
                 logits[i] = float("-inf")
         best_id = int(max(range(len(logits)), key=lambda i: logits[i]))
         token_str = reverse_vocab[best_id]
-        if token_str == '"':
+        if token_str == '"' and not partial.endswith('\\'):
             break
         partial += token_str
         input_ids = input_ids + [best_id]
