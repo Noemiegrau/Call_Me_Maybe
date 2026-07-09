@@ -201,11 +201,11 @@ def generate_string(
     input_ids: list[int],
     reverse_vocab: dict[int, str],
 ) -> tuple[str, list[int]]:
-    """Generate a JSON string value, stopping on the unescaped closing quote.
+    """Generate a JSON string value, stopping on the first unescaped quote.
 
-    Tokens containing a quote are blocked unless they are exactly the
-    closing quote or the two-character escape sequence backslash-quote.
-    Generation stops on a bare quote that is not preceded by a backslash.
+    The model picks tokens freely. If the chosen token contains an unescaped
+    quote character, the content up to that quote is appended and generation
+    stops. This handles multi-character tokens like 'old"' correctly.
 
     Args:
         model: The language model used to get logits.
@@ -218,16 +218,15 @@ def generate_string(
     partial = ""
     while True:
         logits = model.get_logits_from_input_ids(input_ids)
-        for i in range(len(logits)):
-            token_str = reverse_vocab.get(i, "")
-            if not token_str:
-                logits[i] = float("-inf")
-                continue
-            if '"' in token_str and token_str not in {'"', '\\"'}:
-                logits[i] = float("-inf")
         best_id = int(max(range(len(logits)), key=lambda i: logits[i]))
         token_str = reverse_vocab[best_id]
-        if token_str == '"' and not partial.endswith('\\'):
+        close_pos = -1
+        for i, ch in enumerate(token_str):
+            if ch == '"' and (i == 0 or token_str[i - 1] != '\\'):
+                close_pos = i
+                break
+        if close_pos != -1:
+            partial += token_str[:close_pos]
             break
         partial += token_str
         input_ids = input_ids + [best_id]
