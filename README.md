@@ -189,6 +189,6 @@ make run
 
 ### AI usage
 
-Claude Code was used to talk through the constrained decoding architecture, discuss the trade-offs between prefix-trie and regex-NFA approaches for function name selection, and review the state machine logic for number termination. All code in the repository was written and fully understood by the author.
+Claude Code was used to talk through the constrained decoding architecture, discuss the trade-offs between prefix-trie and regex-NFA approaches for function name selection, and review the state machine logic for number termination.
 
 The two-phase generation design (function selection first, parameter extraction second) was also discussed with peers at 42 to validate that it was the right decomposition before committing to it.
